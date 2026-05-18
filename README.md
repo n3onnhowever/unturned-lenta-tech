@@ -29,6 +29,14 @@ Unturned — интерфейс и backend pipeline для автоматиче�
 - CSV содержит 29 колонок в требуемом порядке.
 - Mock mode сохранен и работает без backend.
 
+
+## Состав проекта
+
+- `frontend/` — React one-page dashboard, mock mode, backend adapter and CSV download UI.
+- `backend/` — FastAPI BFF, RabbitMQ worker code, ML/CV pipeline scripts and required runtime weights.
+- `scripts/` — PowerShell helpers for local frontend/backend launch and health checks.
+- `docker-compose.yml` — local RabbitMQ, API and worker stack.
+- `.env.example` — frontend mode and backend URL example.
 ## Архитектура
 
 Frontend:
@@ -125,10 +133,10 @@ powershell -ExecutionPolicy Bypass -File scripts/start-backend.ps1
 
 Проверить:
 
-```powershell
+`powershell
 curl http://localhost:8000/health
 curl http://localhost:8000/health/ml
-```
+`$directBackend
 
 ### 5. Запустить frontend в backend mode
 
@@ -263,3 +271,4 @@ Backend mode:
 Команда: Unturned.
 
 Проект подготовлен для Lenta Tech Life Hack.
+
