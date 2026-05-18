@@ -2,25 +2,25 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
 from .config import get_settings
 from .db import create_job, get_job, init_db, update_job_state
+from .inline_pipeline import run_inline_pipeline
 from .ml_bundle import bundle_scripts_dir
 from .rabbitmq import RabbitMQUnavailable, publish_stage
 from .schemas import HealthResponse, JobCreateResponse, JobStatusResponse, MLReadinessResponse
 from .storage import allocate_job_id, save_upload
 
 app = FastAPI(title="Lenta Tech Hackathon BFF", version="0.1.0")
+settings = get_settings()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ],
+    allow_origins=list(settings.cors_origins),
+    allow_origin_regex=settings.cors_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -82,7 +82,7 @@ async def ui_index() -> FileResponse:
 
 
 @app.post("/jobs/upload", response_model=JobCreateResponse)
-async def upload_job(file: UploadFile = File(...)) -> JobCreateResponse:
+async def upload_job(background_tasks: BackgroundTasks, file: UploadFile = File(...)) -> JobCreateResponse:
     if not file.filename:
         raise HTTPException(status_code=400, detail="Filename is required")
     if not file.filename.lower().endswith((".mp4", ".mov", ".avi", ".mkv")):
@@ -96,6 +96,11 @@ async def upload_job(file: UploadFile = File(...)) -> JobCreateResponse:
         "video_path": str(saved_path),
     }
     create_job(job_id, file.filename, str(saved_path), payload)
+    settings = get_settings()
+    if settings.pipeline_queue_mode == "inline":
+        background_tasks.add_task(run_inline_pipeline, payload)
+        return JobCreateResponse(job_id=job_id, status="queued", current_stage="detect")
+
     try:
         await publish_stage("detect", payload)
     except RabbitMQUnavailable as exc:

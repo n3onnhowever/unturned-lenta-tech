@@ -10,6 +10,12 @@ class Settings:
     app_data_dir: Path
     database_path: Path
     rabbitmq_url: str
+    pipeline_queue_mode: str = "rabbitmq"
+    cors_origins: tuple[str, ...] = (
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    )
+    cors_origin_regex: str | None = r"https://.*\.vercel\.app"
     exchange_name: str = "video_pipeline"
     ml_bundle_dir: Path = Path("lenta-hackathon-main")
     ml_weights_path: Path = Path("lenta-hackathon-main/weights/price_tag_merged_internal_best.pt")
@@ -42,6 +48,12 @@ def get_settings() -> Settings:
     data_dir = Path(os.getenv("APP_DATA_DIR", "data")).resolve()
     database_path = Path(os.getenv("DATABASE_PATH", str(data_dir / "jobs.db"))).resolve()
     rabbitmq_url = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/")
+    cors_origins_raw = os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:3000,http://127.0.0.1:3000",
+    )
+    cors_origins = tuple(origin.strip() for origin in cors_origins_raw.split(",") if origin.strip())
+    cors_origin_regex = os.getenv("CORS_ORIGIN_REGEX", r"https://.*\.vercel\.app").strip() or None
     bundle_dir = Path(os.getenv("ML_BUNDLE_DIR", "lenta-hackathon-main")).resolve()
     weights_path = Path(
         os.getenv(
@@ -54,6 +66,9 @@ def get_settings() -> Settings:
         app_data_dir=data_dir,
         database_path=database_path,
         rabbitmq_url=rabbitmq_url,
+        pipeline_queue_mode=os.getenv("PIPELINE_QUEUE_MODE", "rabbitmq").strip().lower(),
+        cors_origins=cors_origins,
+        cors_origin_regex=cors_origin_regex,
         ml_bundle_dir=bundle_dir,
         ml_weights_path=weights_path,
         ml_conf=float(os.getenv("ML_CONF", "0.01")),
