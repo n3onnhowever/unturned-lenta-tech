@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lenta — загрузка видео</title>
+  <style>
+    :root { font-family: system-ui, sans-serif; max-width: 42rem; margin: 2rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.25rem; }
+    label { display: block; margin: 0.75rem 0 0.25rem; }
+    input[type="file"] { margin-bottom: 0.5rem; }
+    button { margin-top: 0.75rem; padding: 0.45rem 1rem; cursor: pointer; }
+    pre { background: #f4f4f5; padding: 0.75rem; overflow: auto; font-size: 0.8rem; border-radius: 4px; }
+    .ok { color: #166534; }
+    .err { color: #991b1b; }
+    a { word-break: break-all; }
+  </style>
+</head>
+<body>
+  <h1>Распознавание ценников — загрузка видео</h1>
+  <p>Отправьте видео робота (.mp4, .mov, .avi, .mkv). Дождитесь статуса <code>completed</code>, затем скачайте CSV или JSON.</p>
+
+  <label for="file">Файл</label>
+  <input id="file" type="file" accept=".mp4,.mov,.avi,.mkv,video/*" />
+  <button type="button" id="upload">Загрузить</button>
+
+  <label for="jobId">job_id (опционально, для опроса)</label>
+  <input id="jobId" type="text" style="width: 100%; box-sizing: border-box;" placeholder="после загрузки подставится автоматически" />
+
+  <button type="button" id="poll">Проверить статус</button>
+
+  <p id="mlStatus"></p>
+  <pre id="out">Готово к работе.</pre>
+
+  <script>
+    const out = document.getElementById("out");
+    const mlStatus = document.getElementById("mlStatus");
+
+    async function checkMl() {
+      try {
+        const r = await fetch("/health/ml");
+        const j = await r.json();
+        if (j.ready) {
+          mlStatus.innerHTML = '<span class="ok">ML: веса и скрипты на месте.</span>';
+        } else {
+          mlStatus.innerHTML = '<span class="err">ML не готово: ' + (j.detail || "см. /health/ml") + "</span>";
+        }
+      } catch (e) {
+        mlStatus.innerHTML = '<span class="err">Не удалось вызвать /health/ml</span>';
+      }
+    }
+    checkMl();
+
+    document.getElementById("upload").onclick = async () => {
+      const f = document.getElementById("file").files[0];
+      if (!f) { out.textContent = "Выберите файл."; return; }
+      out.textContent = "Загрузка…";
+      const fd = new FormData();
+      fd.append("file", f);
+      try {
+        const r = await fetch("/jobs/upload", { method: "POST", body: fd });
+        const j = await r.json();
+        if (!r.ok) {
+          out.textContent = JSON.stringify(j, null, 2);
+          return;
+        }
+        document.getElementById("jobId").value = j.job_id;
+        out.textContent = JSON.stringify(j, null, 2);
+      } catch (e) {
+        out.textContent = String(e);
+      }
+    };
+
+    document.getElementById("poll").onclick = async () => {
+      const id = document.getElementById("jobId").value.trim();
+      if (!id) { out.textContent = "Укажите job_id."; return; }
+      out.textContent = "Опрос…";
+      try {
+        const r = await fetch("/jobs/" + encodeURIComponent(id));
+        const j = await r.json();
+        let extra = "";
+        if (j.status === "completed" && j.result_csv_url && j.result_json_url) {
+          const base = window.location.origin;
+          extra =
+            "\n\nСкачать:\n" +
+            "CSV: " + base + j.result_csv_url + "\n" +
+            "JSON: " + base + j.result_json_url;
+        }
+        out.textContent = JSON.stringify(j, null, 2) + extra;
+      } catch (e) {
+        out.textContent = String(e);
+      }
+    };
+  </script>
+</body>
+</html>

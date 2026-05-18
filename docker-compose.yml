@@ -1,0 +1,136 @@
+﻿x-safe-ml-env: &safe-ml-env
+  ML_FRAME_STRIDE: 1
+  ML_IMGSZ: 1280
+  ML_MIN_CONF: 0.45
+  ML_PRECLUSTER_IOU: 0.45
+  ML_PRECLUSTER_MAX_FRAME_GAP: 20
+  ML_WORKER_THREADS: 2
+  OMP_NUM_THREADS: 2
+  OMP_THREAD_LIMIT: 2
+  OPENBLAS_NUM_THREADS: 2
+  MKL_NUM_THREADS: 2
+  NUMEXPR_NUM_THREADS: 2
+  VECLIB_MAXIMUM_THREADS: 2
+  OPENCV_FOR_THREADS_NUM: 2
+  YOLO_CONFIG_DIR: /tmp/Ultralytics
+
+x-api-limits: &api-limits
+  cpus: "1.0"
+  mem_limit: 1g
+  memswap_limit: 1g
+
+x-worker-limits: &worker-limits
+  cpus: "2.0"
+  mem_limit: 4g
+  memswap_limit: 4g
+
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    hostname: rabbitmq
+    cpus: "0.5"
+    mem_limit: 512m
+    memswap_limit: 512m
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  api:
+    <<: *api-limits
+    build: ./backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    environment:
+      <<: *safe-ml-env
+      APP_DATA_DIR: /app/data
+      DATABASE_PATH: /app/data/jobs.db
+      ML_BUNDLE_DIR: /app/lenta-hackathon-main
+      ML_WEIGHTS_PATH: /app/lenta-hackathon-main/weights/price_tag_merged_internal_best.pt
+      ML_UPSCALE_MODEL_PATH: /app/lenta-hackathon-main/weights/FSRCNN_x4.pb
+      ML_UPSCALE_MODEL_NAME: fsrcnn
+      ML_UPSCALE_SCALE: 4
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./runtime-data:/app/data
+    depends_on:
+      - rabbitmq
+
+  worker-detect:
+    <<: *worker-limits
+    build: ./backend
+    command: python -m app.worker --stage detect
+    environment:
+      <<: *safe-ml-env
+      APP_DATA_DIR: /app/data
+      DATABASE_PATH: /app/data/jobs.db
+      ML_BUNDLE_DIR: /app/lenta-hackathon-main
+      ML_WEIGHTS_PATH: /app/lenta-hackathon-main/weights/price_tag_merged_internal_best.pt
+      ML_UPSCALE_MODEL_PATH: /app/lenta-hackathon-main/weights/FSRCNN_x4.pb
+      ML_UPSCALE_MODEL_NAME: fsrcnn
+      ML_UPSCALE_SCALE: 4
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+    volumes:
+      - ./runtime-data:/app/data
+    depends_on:
+      - rabbitmq
+
+  worker-classify:
+    <<: *worker-limits
+    build: ./backend
+    command: python -m app.worker --stage classify
+    environment:
+      <<: *safe-ml-env
+      APP_DATA_DIR: /app/data
+      DATABASE_PATH: /app/data/jobs.db
+      ML_BUNDLE_DIR: /app/lenta-hackathon-main
+      ML_WEIGHTS_PATH: /app/lenta-hackathon-main/weights/price_tag_merged_internal_best.pt
+      ML_UPSCALE_MODEL_PATH: /app/lenta-hackathon-main/weights/FSRCNN_x4.pb
+      ML_UPSCALE_MODEL_NAME: fsrcnn
+      ML_UPSCALE_SCALE: 4
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+    volumes:
+      - ./runtime-data:/app/data
+    depends_on:
+      - rabbitmq
+
+  worker-ocr:
+    <<: *worker-limits
+    build: ./backend
+    command: python -m app.worker --stage ocr
+    environment:
+      <<: *safe-ml-env
+      APP_DATA_DIR: /app/data
+      DATABASE_PATH: /app/data/jobs.db
+      ML_BUNDLE_DIR: /app/lenta-hackathon-main
+      ML_WEIGHTS_PATH: /app/lenta-hackathon-main/weights/price_tag_merged_internal_best.pt
+      ML_UPSCALE_MODEL_PATH: /app/lenta-hackathon-main/weights/FSRCNN_x4.pb
+      ML_UPSCALE_MODEL_NAME: fsrcnn
+      ML_UPSCALE_SCALE: 4
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+    volumes:
+      - ./runtime-data:/app/data
+    depends_on:
+      - rabbitmq
+
+  worker-finalize:
+    <<: *worker-limits
+    build: ./backend
+    command: python -m app.worker --stage finalize
+    environment:
+      <<: *safe-ml-env
+      APP_DATA_DIR: /app/data
+      DATABASE_PATH: /app/data/jobs.db
+      ML_BUNDLE_DIR: /app/lenta-hackathon-main
+      ML_WEIGHTS_PATH: /app/lenta-hackathon-main/weights/price_tag_merged_internal_best.pt
+      ML_UPSCALE_MODEL_PATH: /app/lenta-hackathon-main/weights/FSRCNN_x4.pb
+      ML_UPSCALE_MODEL_NAME: fsrcnn
+      ML_UPSCALE_SCALE: 4
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+    volumes:
+      - ./runtime-data:/app/data
+    depends_on:
+      - rabbitmq

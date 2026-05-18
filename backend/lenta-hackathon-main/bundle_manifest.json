@@ -1,0 +1,52 @@
+{
+  "bundle_name": "lenta_hackathon_final_backend_bundle",
+  "created_for": "backend handoff",
+  "best_honest_artifact_id": "root_holdout_43_15_neg_pricezone_discount_barcode_raw",
+  "entrypoints": {
+    "powershell": "run_final_pipeline.ps1",
+    "manual_docs": "README_BACKEND.md"
+  },
+  "weights": {
+    "honest_holdout_detector": "weights/price_tag_holdout_43_15_neg_e12_best.pt",
+    "internal_merged_detector": "weights/price_tag_merged_internal_best.pt"
+  },
+  "sample_outputs": {
+    "submission_csv": "sample_outputs/43_15_submission_best_honest.csv",
+    "compliance_report": "reports/43_15_compliance_best_honest.json",
+    "csv_contract_report": "reports/csv_contract_report_43_15.json",
+    "metrics_registry": "reports/metrics_registry.json"
+  },
+  "honest_metrics_43_15": {
+    "leakage_detected": false,
+    "matched_crops": 29,
+    "gt_tags_in_csv": 29,
+    "price_card_match_pct": 75.9,
+    "price_default_match_pct": 17.2,
+    "discount_match_pct": 10.3,
+    "barcode_match_pct": 0.0,
+    "color_match_pct": 62.1
+  },
+  "csv_contract": {
+    "verdict": "pass",
+    "columns": [
+      "filename",
+      "product_name",
+      "price_default",
+      "price_card",
+      "price_discount",
+      "barcode",
+      "discount_amount",
+      "id_sku",
+      "print_datetime",
+      "code",
+      "additional_info",
+      "color",
+      "special_symbols",
+      "frame_timestamp",
+      "x_min",
+      "y_min",
+      "x_max",
+      "y_max"
+    ]
+  }
+}

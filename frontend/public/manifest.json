@@ -1,0 +1,15 @@
+{
+  "short_name": "Unturned",
+  "name": "Unturned shelf-control interface",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "64x64",
+      "type": "image/svg+xml"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#061a3d",
+  "background_color": "#061a3d"
+}
