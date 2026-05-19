@@ -173,4 +173,8 @@ action_code_qr
 
 ## Команда
 
-Unturned — проект для Lenta Tech Life Hack.
+- [@n3onnhowever](https://github.com/n3onnhowever)
+- [@NikitkaYolo](https://github.com/NikitkaYolo)
+- [@Scream-Prox](https://github.com/Scream-Prox)
+
+Проект подготовлен командой Unturned для Lenta Tech Life Hack.
