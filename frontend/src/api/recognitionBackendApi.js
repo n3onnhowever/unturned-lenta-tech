@@ -2,6 +2,7 @@ import recognitionColumns from "constants/recognitionColumns";
 import { parseCsv, validateRecognitionCsvHeaders } from "utils/csvParser";
 
 const POLL_INTERVAL_MS = 4000;
+const NETWORK_RETRY_DELAYS_MS = [1500, 4000, 8000];
 
 const notEmpty = (value) => {
   const normalized = String(value ?? "").trim().toLowerCase();
@@ -21,8 +22,32 @@ export function isBackendEnabled() {
   return Boolean(getBackendBaseUrl());
 }
 
+function isNetworkFetchError(error) {
+  return error instanceof TypeError || String(error?.message || "").toLowerCase().includes("failed to fetch");
+}
+
+async function fetchWithNetworkRetry(url, options) {
+  let lastError;
+
+  for (let attempt = 0; attempt <= NETWORK_RETRY_DELAYS_MS.length; attempt += 1) {
+    try {
+      return await fetch(url, options);
+    } catch (error) {
+      lastError = error;
+      if (!isNetworkFetchError(error) || attempt === NETWORK_RETRY_DELAYS_MS.length) {
+        break;
+      }
+      await wait(NETWORK_RETRY_DELAYS_MS[attempt]);
+    }
+  }
+
+  throw new Error(
+    "Не удалось подключиться к backend. Проверьте интернет, подождите, пока Hugging Face Space проснется, и повторите запуск."
+  );
+}
+
 async function requestJson(url, options) {
-  const response = await fetch(url, options);
+  const response = await fetchWithNetworkRetry(url, options);
   const contentType = response.headers.get("content-type") || "";
   const body = contentType.includes("application/json")
     ? await response.json()
@@ -37,7 +62,7 @@ async function requestJson(url, options) {
 }
 
 async function requestText(url) {
-  const response = await fetch(url);
+  const response = await fetchWithNetworkRetry(url);
   const body = await response.text();
 
   if (!response.ok) {
