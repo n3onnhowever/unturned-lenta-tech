@@ -24,7 +24,7 @@ function Footer() {
         <VuiBox textAlign={{ xs: "left", md: "right" }}>
           <VuiTypography
             component="a"
-            href="https://github.com/n3onnhowever/lenta-shelf-control"
+            href="https://github.com/n3onnhowever/unturned-lenta-tech"
             target="_blank"
             rel="noreferrer"
             color="info"

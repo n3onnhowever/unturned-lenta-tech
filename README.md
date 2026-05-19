@@ -176,5 +176,7 @@ action_code_qr
 - [@n3onnhowever](https://github.com/n3onnhowever)
 - [@NikitkaYolo](https://github.com/NikitkaYolo)
 - [@Scream-Prox](https://github.com/Scream-Prox)
+- [@DKKost-altf4](https://github.com/DKKost-altf4)
+- [@Defolt29](https://github.com/Defolt29)
 
 Проект подготовлен командой Unturned для Lenta Tech Life Hack.
