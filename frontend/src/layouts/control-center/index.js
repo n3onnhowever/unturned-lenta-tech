@@ -26,7 +26,6 @@ import uiText, {
 } from "constants/uiText";
 import { downloadCsv, processVideo } from "api/recognitionApi";
 import { isBackendEnabled } from "api/recognitionBackendApi";
-import { sampleRecognitionRows } from "mocks/recognitionMockData";
 import {
   buildRecognitionAnalytics,
   getPipelineStageState,
@@ -64,6 +63,7 @@ const resultColumns = uiText.results.columns.map((column) => ({
 }));
 
 const allowedVideoExtensions = [".mp4", ".mov", ".avi", ".mkv"];
+const EMPTY_VALUE = "\u2014";
 
 const formatFileSize = (size) => `${(size / 1024 / 1024).toFixed(2)} MB`;
 
@@ -284,7 +284,9 @@ function MetricCard({ label, value, icon, tone = "info" }) {
 }
 
 function MiniBar({ label, value, max = 100 }) {
-  const width = `${Math.min(100, Math.round((value / max) * 100))}%`;
+  const safeMax = Math.max(1, Number(max) || 1);
+  const safeValue = Math.max(0, Number(value) || 0);
+  const width = `${Math.min(100, Math.round((safeValue / safeMax) * 100))}%`;
 
   return (
     <VuiBox mb={1.5}>
@@ -293,7 +295,7 @@ function MiniBar({ label, value, max = 100 }) {
           {label}
         </VuiTypography>
         <VuiTypography color="white" variant="caption" fontWeight="bold">
-          {value}
+          {safeValue}
         </VuiTypography>
       </VuiBox>
       <VuiBox height="8px" borderRadius="8px" sx={{ background: "rgba(255,255,255,0.08)" }}>
@@ -314,9 +316,10 @@ function ControlCenter() {
     uiText.processing.idle
   );
 
-  const activeRows = result?.rows?.length ? result.rows : sampleRecognitionRows;
+  const hasCompletedResult = Boolean(result);
+  const activeRows = result?.rows ?? [];
   const analytics = useMemo(() => buildRecognitionAnalytics(activeRows), [activeRows]);
-  const csvRows = result?.rows?.length ? result.rows : sampleRecognitionRows;
+  const csvRows = result?.rows ?? [];
 
   useEffect(() => {
     if (!selectedFile && !result && !isProcessing && !error) {
@@ -325,12 +328,12 @@ function ControlCenter() {
   }, [error, isProcessing, result, selectedFile]);
 
   const kpis = [
-    { label: uiText.kpi.shelfHealth, value: analytics.shelfHealthScore, icon: <IoCheckmark color="white" size="22px" /> },
-    { label: uiText.kpi.priceTagsFound, value: analytics.priceTagsFound, icon: <IoDocumentText color="white" size="22px" /> },
-    { label: uiText.kpi.qrSuccess, value: analytics.qrSuccessRate, icon: <IoGitNetwork color="white" size="22px" /> },
-    { label: uiText.kpi.fieldCompleteness, value: analytics.fieldCompleteness, icon: <IoAnalytics color="white" size="22px" /> },
-    { label: uiText.kpi.issuesFound, value: analytics.issuesFound, icon: <IoWarning color="white" size="22px" />, tone: "warning" },
-    { label: uiText.kpi.averageConfidence, value: analytics.averageConfidenceLabel, icon: <IoBarChart color="white" size="22px" /> },
+    { label: uiText.kpi.shelfHealth, value: hasCompletedResult ? analytics.shelfHealthScore : EMPTY_VALUE, icon: <IoCheckmark color="white" size="22px" /> },
+    { label: uiText.kpi.priceTagsFound, value: hasCompletedResult ? analytics.priceTagsFound : EMPTY_VALUE, icon: <IoDocumentText color="white" size="22px" /> },
+    { label: uiText.kpi.qrSuccess, value: hasCompletedResult ? analytics.qrSuccessRate : EMPTY_VALUE, icon: <IoGitNetwork color="white" size="22px" /> },
+    { label: uiText.kpi.fieldCompleteness, value: hasCompletedResult ? analytics.fieldCompleteness : EMPTY_VALUE, icon: <IoAnalytics color="white" size="22px" /> },
+    { label: uiText.kpi.issuesFound, value: hasCompletedResult ? analytics.issuesFound : EMPTY_VALUE, icon: <IoWarning color="white" size="22px" />, tone: "warning" },
+    { label: uiText.kpi.averageConfidence, value: hasCompletedResult ? analytics.averageConfidenceLabel : EMPTY_VALUE, icon: <IoBarChart color="white" size="22px" /> },
   ];
 
   const handleFileChange = (event) => {
@@ -385,9 +388,11 @@ function ControlCenter() {
   };
 
   const handleDownloadCsv = async () => {
+    if (!hasCompletedResult) return;
+
     await downloadCsv(
       csvRows,
-      result?.rows?.length ? "recognition_result.csv" : "sample_recognition_result.csv",
+      "recognition_result.csv",
       { backend: result?.backend }
     );
   };
@@ -416,12 +421,14 @@ function ControlCenter() {
                 <VuiTypography color="text" variant="button" display="block" mb={4}>
                   {uiText.hero.description}
                 </VuiTypography>
-                <VuiBox display="flex" flexWrap="wrap" gap={2}>
-                  <VuiButton color="dark" onClick={handleDownloadCsv}>
-                    <IoCloudDownload size="16px" style={{ marginRight: 8 }} />
-                    {result?.rows?.length ? uiText.hero.csvButton : uiText.hero.sampleCsvButton}
-                  </VuiButton>
-                </VuiBox>
+                {hasCompletedResult && (
+                  <VuiBox display="flex" flexWrap="wrap" gap={2}>
+                    <VuiButton color="dark" onClick={handleDownloadCsv}>
+                      <IoCloudDownload size="16px" style={{ marginRight: 8 }} />
+                      {uiText.hero.csvButton}
+                    </VuiButton>
+                  </VuiBox>
+                )}
               </Grid>
             </Grid>
           </Card>
@@ -556,13 +563,13 @@ function ControlCenter() {
               </VuiTypography>
               <Grid container spacing={2}>
                 {[
-                  [uiText.summary.framesProcessed, result?.summary?.framesProcessed ?? analytics.framesProcessed],
-                  [uiText.summary.priceTagsFound, analytics.priceTagsFound],
-                  [uiText.summary.qrDecoded, analytics.qrCodesDecoded],
-                  [uiText.summary.fieldsFilled, analytics.fieldsFilled],
-                  [uiText.summary.issuesFound, analytics.issuesFound],
-                  [uiText.summary.averageConfidence, analytics.averageConfidenceLabel],
-                  [uiText.summary.processingTime, `${result?.summary?.processingTimeSec ?? analytics.processingTimeSec} сек`],
+                  [uiText.summary.framesProcessed, hasCompletedResult ? result?.summary?.framesProcessed ?? analytics.framesProcessed : EMPTY_VALUE],
+                  [uiText.summary.priceTagsFound, hasCompletedResult ? analytics.priceTagsFound : EMPTY_VALUE],
+                  [uiText.summary.qrDecoded, hasCompletedResult ? analytics.qrCodesDecoded : EMPTY_VALUE],
+                  [uiText.summary.fieldsFilled, hasCompletedResult ? analytics.fieldsFilled : EMPTY_VALUE],
+                  [uiText.summary.issuesFound, hasCompletedResult ? analytics.issuesFound : EMPTY_VALUE],
+                  [uiText.summary.averageConfidence, hasCompletedResult ? analytics.averageConfidenceLabel : EMPTY_VALUE],
+                  [uiText.summary.processingTime, hasCompletedResult ? `${result?.summary?.processingTimeSec ?? analytics.processingTimeSec} сек` : EMPTY_VALUE],
                 ].map(([label, value], index) => (
                   <Grid item xs={12} sm={6} lg={index === 6 ? 12 : 6} key={label}>
                     <VuiBox
@@ -607,7 +614,7 @@ function ControlCenter() {
                     {uiText.results.subtitle}
                   </VuiTypography>
                 </VuiBox>
-                <VuiButton color="info" onClick={handleDownloadCsv}>
+                <VuiButton color="info" onClick={handleDownloadCsv} disabled={!hasCompletedResult}>
                   <IoCloudDownload size="16px" style={{ marginRight: 8 }} />
                   {uiText.results.downloadButton}
                 </VuiButton>
@@ -694,6 +701,26 @@ function ControlCenter() {
                     </TableRow>
                   </TableHead>
                   <TableBody>
+                    {!activeRows.length && (
+                      <TableRow>
+                        <TableCell
+                          colSpan={resultColumns.length}
+                          sx={{
+                            borderBottom: "none",
+                            backgroundColor: "transparent !important",
+                            py: 4,
+                            px: 3,
+                            textAlign: "center",
+                          }}
+                        >
+                          <VuiTypography color="text" variant="button" fontWeight="bold">
+                            {hasCompletedResult
+                              ? "\u0426\u0435\u043D\u043D\u0438\u043A\u0438 \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u044B. CSV \u0434\u043E\u0441\u0442\u0443\u043F\u0435\u043D \u0434\u043B\u044F \u0441\u043A\u0430\u0447\u0438\u0432\u0430\u043D\u0438\u044F."
+                              : "\u0420\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442\u044B \u043F\u043E\u044F\u0432\u044F\u0442\u0441\u044F \u043F\u043E\u0441\u043B\u0435 \u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0438 \u0432\u0438\u0434\u0435\u043E \u0438 \u0437\u0430\u0432\u0435\u0440\u0448\u0435\u043D\u0438\u044F \u043E\u0431\u0440\u0430\u0431\u043E\u0442\u043A\u0438."}
+                          </VuiTypography>
+                        </TableCell>
+                      </TableRow>
+                    )}
                     {activeRows.map((row, index) => (
                       <TableRow
                         key={`${row.frame_timestamp}-${index}`}
@@ -742,32 +769,42 @@ function ControlCenter() {
               <VuiTypography color="text" variant="caption" display="block" mb={2}>
                 {uiText.analytics.subtitle}
               </VuiTypography>
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <MiniBar label={uiText.analytics.qrSuccess} value={Number(analytics.qrSuccessRate.replace("%", ""))} />
-                  <MiniBar label={uiText.analytics.fieldCompleteness} value={Number(analytics.fieldCompleteness.replace("%", ""))} />
-                  <MiniBar label={uiText.analytics.scanQuality} value={Number(analytics.scanQuality.replace("%", ""))} />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  {Object.entries(analytics.issueBreakdown).map(([label, value]) => (
-                    <MiniBar key={label} label={getIssueLabel(label)} value={value} max={analytics.priceTagsFound} />
-                  ))}
-                  {Object.entries(analytics.statusBreakdown).map(([label, value]) => (
-                    <MiniBar key={label} label={getBreakdownLabel("status", label)} value={value} max={analytics.priceTagsFound} />
-                  ))}
-                  {Object.entries(analytics.priceTypeDistribution).map(([label, value]) => (
-                    <MiniBar key={label} label={getBreakdownLabel("price", label)} value={value} max={analytics.priceTagsFound} />
-                  ))}
-                </Grid>
-              </Grid>
-              <VuiBox mt={2} p={2} borderRadius="md" sx={{ background: "rgba(1, 117, 255, 0.1)" }}>
-                <VuiTypography color="text" variant="caption" display="block">
-                  {uiText.analytics.insight}
-                </VuiTypography>
-                <VuiTypography color="text" variant="caption" display="block">
-                  {uiText.analytics.recommendation}
-                </VuiTypography>
-              </VuiBox>
+              {hasCompletedResult ? (
+                <>
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} md={6}>
+                      <MiniBar label={uiText.analytics.qrSuccess} value={Number(analytics.qrSuccessRate.replace("%", ""))} />
+                      <MiniBar label={uiText.analytics.fieldCompleteness} value={Number(analytics.fieldCompleteness.replace("%", ""))} />
+                      <MiniBar label={uiText.analytics.scanQuality} value={Number(analytics.scanQuality.replace("%", ""))} />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      {Object.entries(analytics.issueBreakdown).map(([label, value]) => (
+                        <MiniBar key={label} label={getIssueLabel(label)} value={value} max={analytics.priceTagsFound} />
+                      ))}
+                      {Object.entries(analytics.statusBreakdown).map(([label, value]) => (
+                        <MiniBar key={label} label={getBreakdownLabel("status", label)} value={value} max={analytics.priceTagsFound} />
+                      ))}
+                      {Object.entries(analytics.priceTypeDistribution).map(([label, value]) => (
+                        <MiniBar key={label} label={getBreakdownLabel("price", label)} value={value} max={analytics.priceTagsFound} />
+                      ))}
+                    </Grid>
+                  </Grid>
+                  <VuiBox mt={2} p={2} borderRadius="md" sx={{ background: "rgba(1, 117, 255, 0.1)" }}>
+                    <VuiTypography color="text" variant="caption" display="block">
+                      {uiText.analytics.insight}
+                    </VuiTypography>
+                    <VuiTypography color="text" variant="caption" display="block">
+                      {uiText.analytics.recommendation}
+                    </VuiTypography>
+                  </VuiBox>
+                </>
+              ) : (
+                <VuiBox p={3} borderRadius="md" sx={{ background: "rgba(255, 255, 255, 0.045)" }}>
+                  <VuiTypography color="text" variant="button" fontWeight="bold">
+                    {"\u0410\u043D\u0430\u043B\u0438\u0442\u0438\u043A\u0430 \u043F\u043E\u044F\u0432\u0438\u0442\u0441\u044F \u043F\u043E\u0441\u043B\u0435 \u0437\u0430\u0432\u0435\u0440\u0448\u0435\u043D\u0438\u044F \u043E\u0431\u0440\u0430\u0431\u043E\u0442\u043A\u0438."}
+                  </VuiTypography>
+                </VuiBox>
+              )}
             </Card>
           </Grid>
         </Grid>

@@ -16,7 +16,31 @@ export const getFindings = (rows) =>
     }));
 
 export const buildRecognitionAnalytics = (rows) => {
-  const total = rows.length || 1;
+  if (!rows.length) {
+    return {
+      framesProcessed: 0,
+      priceTagsFound: 0,
+      qrCodesDecoded: 0,
+      fieldsFilled: 0,
+      issuesFound: 0,
+      averageConfidence: 0,
+      processingTimeSec: 0,
+      shelfHealthScore: 0,
+      qrSuccessRate: "0%",
+      fieldCompleteness: "0%",
+      averageConfidenceLabel: "0%",
+      scanQuality: "0%",
+      issueBreakdown: {},
+      statusBreakdown: {},
+      priceTypeDistribution: {
+        default: 0,
+        card: 0,
+        discount: 0,
+      },
+    };
+  }
+
+  const total = rows.length;
   const qrDecoded = rows.filter((row) => isFilled(row.qr_code_barcode)).length;
   const issueRows = rows.filter((row) => row.issueTypes?.length).length;
   const avgConfidence =
