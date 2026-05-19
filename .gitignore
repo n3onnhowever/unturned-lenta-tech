@@ -40,3 +40,4 @@ backend/lenta-hackathon-main/weights/*
 !backend/lenta-hackathon-main/weights/price_tag_merged_internal_best.pt
 !backend/lenta-hackathon-main/weights/FSRCNN_x4.pb
 *.err
+.vercel

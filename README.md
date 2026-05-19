@@ -4,7 +4,7 @@ Unturned — web-интерфейс и backend pipeline для распозна�
 
 ## Demo
 
-- Frontend: https://frontend-weld-ten-13.vercel.app
+- Frontend: https://unturned-lenta-tech.vercel.app
 - Backend API: https://n3onn-unturned-lenta-tech-backend.hf.space
 - Health: https://n3onn-unturned-lenta-tech-backend.hf.space/health
 - ML health: https://n3onn-unturned-lenta-tech-backend.hf.space/health/ml
