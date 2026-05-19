@@ -1,0 +1,6 @@
+path: E:/haka/dataset/price_tags_holdout_43_15_neg
+train: images/train
+val: images/val
+nc: 1
+names:
+  0: price_tag

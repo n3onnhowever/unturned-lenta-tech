@@ -1,0 +1,7 @@
+aio-pika==9.5.5
+fastapi==0.115.12
+imageio-ffmpeg==0.6.0
+numpy>=1.26
+opencv-contrib-python-headless>=4.10
+python-multipart==0.0.20
+uvicorn[standard]==0.34.2

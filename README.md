@@ -28,6 +28,8 @@ Unturned — интерфейс и backend pipeline для автоматиче�
 - ML health: `GET /health/ml` возвращает `ready: true`, если runtime weights на месте.
 - CSV содержит 29 колонок в требуемом порядке.
 - Mock mode сохранен и работает без backend.
+- Hosted backend на Hugging Face Spaces Docker проверен: upload smoke video -> job completed -> `result.csv`.
+- Vercel production frontend собран в backend mode и использует Hugging Face backend.
 
 
 ## Состав проекта
@@ -133,10 +135,10 @@ powershell -ExecutionPolicy Bypass -File scripts/start-backend.ps1
 
 Проверить:
 
-`powershell
+```powershell
 curl http://localhost:8000/health
 curl http://localhost:8000/health/ml
-`$directBackend
+```
 
 ### 5. Запустить frontend в backend mode
 
@@ -255,16 +257,24 @@ Backend mode:
 
 ## Хостинг
 
-Временно:
+Production demo:
 
-- frontend можно задеплоить отдельно;
-- backend можно поднять локально или на Docker-hosting;
-- для frontend-only demo использовать mock mode.
+- Frontend: https://frontend-weld-ten-13.vercel.app
+- Backend API: https://n3onn-unturned-lenta-tech-backend.hf.space
+- Health: https://n3onn-unturned-lenta-tech-backend.hf.space/health
+- ML health: https://n3onn-unturned-lenta-tech-backend.hf.space/health/ml
 
-Дальше:
+Текущий hosted status:
 
-- frontend: Vercel / Render Static Site;
-- backend: Render Docker / Hugging Face Spaces Docker / другой Docker host.
+- backend mode demo работает через Hugging Face Spaces Docker;
+- hosted API smoke e2e прошел: upload -> polling -> result JSON -> result CSV;
+- `result.csv` содержит 29 колонок в требуемом порядке;
+- Render backend остановлен: free instance не проходил YOLO detect из-за resource limit.
+
+Frontend-only fallback:
+
+- mock mode сохранен для UI-demo без backend;
+- для backend-connected demo используйте Vercel frontend выше.
 
 ## Репозиторий и команда
 
