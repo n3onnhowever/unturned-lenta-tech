@@ -1,111 +1,59 @@
-﻿# Unturned
+# Unturned
 
-## Кратко
+Unturned — web-интерфейс и backend pipeline для распознавания ценников с видео робота, который движется вдоль стеллажа. Результат обработки: таблица найденных ценников и CSV в формате Lenta Tech Life Hack.
 
-Unturned — интерфейс и backend pipeline для автоматического распознавания ценников с видео робота, движущегося вдоль стеллажа. Система находит ценники, извлекает QR/OCR-данные, формирует таблицу результатов и CSV по требованиям Lenta Tech Life Hack.
+## Demo
 
-## Возможности
+- Frontend: https://frontend-weld-ten-13.vercel.app
+- Backend API: https://n3onn-unturned-lenta-tech-backend.hf.space
+- Health: https://n3onn-unturned-lenta-tech-backend.hf.space/health
+- ML health: https://n3onn-unturned-lenta-tech-backend.hf.space/health/ml
 
-- загрузка видео через web-интерфейс;
+Hosted backend работает на Hugging Face Spaces Docker. Render backend остановлен, потому что free instance падал на YOLO detect из-за resource limit.
+
+## Что умеет
+
+- загрузка видео через UI;
 - обработка через FastAPI backend;
-- staged pipeline через RabbitMQ workers;
-- детекция ценников;
-- OCR/QR обработка;
-- deduplication;
-- result JSON;
-- result CSV;
-- отображение результата в таблице;
-- скачивание CSV;
-- mock mode для frontend-demo без backend;
-- backend mode для полного e2e.
+- pipeline: detect -> classify -> OCR -> finalize;
+- polling статуса job;
+- просмотр результата в таблице;
+- скачивание backend `result.csv`;
+- mock mode для frontend без backend;
+- backend mode для полного demo flow.
 
-## Статус проверки
-
-- Docker backend был поднят локально.
-- UI-driven e2e был проверен на рабочем проекте.
-- Статус: `READY_FOR_DEMO_WITH_BACKEND`.
-- Backend health: `GET /health` возвращает `ok`.
-- ML health: `GET /health/ml` возвращает `ready: true`, если runtime weights на месте.
-- CSV содержит 29 колонок в требуемом порядке.
-- Mock mode сохранен и работает без backend.
-- Hosted backend на Hugging Face Spaces Docker проверен: upload smoke video -> job completed -> `result.csv`.
-- Vercel production frontend собран в backend mode и использует Hugging Face backend.
-
-
-## Состав проекта
-
-- `frontend/` — React one-page dashboard, mock mode, backend adapter and CSV download UI.
-- `backend/` — FastAPI BFF, RabbitMQ worker code, ML/CV pipeline scripts and required runtime weights.
-- `scripts/` — PowerShell helpers for local frontend/backend launch and health checks.
-- `docker-compose.yml` — local RabbitMQ, API and worker stack.
-- `.env.example` — frontend mode and backend URL example.
 ## Архитектура
 
-Frontend:
-
-- React;
-- Vision UI Dashboard React base;
-- one-page operator dashboard;
-- backend adapter;
-- CSV parser;
-- mock fallback.
-
-Backend:
-
-- FastAPI BFF;
-- RabbitMQ;
-- SQLite job storage;
-- workers: `detect`, `classify`, `ocr`, `finalize`;
-- YOLO / OpenCV / OCR scripts;
-- result JSON / result CSV.
-
-Flow:
-
 ```text
-Видео
+Frontend React
   -> POST /jobs/upload
-  -> RabbitMQ
-  -> detect
-  -> classify
-  -> ocr
-  -> finalize
+  -> FastAPI backend
+  -> detect / classify / ocr / finalize
+  -> GET /jobs/{job_id}
   -> GET /jobs/{job_id}/result
   -> GET /jobs/{job_id}/result.csv
-  -> UI table / CSV download
+  -> UI table + CSV download
 ```
 
-## Требования
+Локально backend запускается через Docker Compose с RabbitMQ и workers. Для Hugging Face Spaces используется Docker backend в inline mode без RabbitMQ, но с тем же HTTP API.
 
-- Windows / macOS / Linux
-- Node.js 16/18/20
-- npm
-- Docker Desktop
-- Git
+## Структура
 
-Для Windows:
+- `frontend/` — React dashboard, backend adapter, CSV download.
+- `backend/` — локальный FastAPI + RabbitMQ workers + ML scripts.
+- `hf-space-backend/` — Docker package для Hugging Face Spaces.
+- `scripts/` — PowerShell helpers для локального запуска.
+- `docker-compose.yml` — локальный backend stack.
 
-- PowerShell;
-- Docker Desktop должен быть запущен.
-
-## Локальный запуск
-
-### 1. Клонировать репозиторий
+## Быстрый запуск frontend
 
 ```powershell
 git clone https://github.com/n3onnhowever/unturned-lenta-tech.git
-cd unturned-lenta-tech
-```
-
-Если репозиторий создан под другим именем, используйте URL из GitHub.
-
-### 2. Установить frontend dependencies
-
-```powershell
-cd frontend
+cd unturned-lenta-tech\frontend
 npm.cmd install
 ```
 
-### 3. Запустить frontend в mock mode
+Mock mode:
 
 ```powershell
 $env:REACT_APP_RECOGNITION_MODE="mock"
@@ -113,59 +61,46 @@ $env:DISABLE_ESLINT_PLUGIN="true"
 npm.cmd start
 ```
 
-Открыть:
-
-```text
-http://localhost:3000
-```
-
-Или из корня:
+Backend mode:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts/start-frontend-mock.ps1
+$env:REACT_APP_RECOGNITION_MODE="backend"
+$env:REACT_APP_API_URL="http://localhost:8000"
+$env:DISABLE_ESLINT_PLUGIN="true"
+npm.cmd start
 ```
 
-### 4. Запустить backend
+Frontend откроется на http://localhost:3000.
 
-Из корня repo:
+## Локальный backend
 
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/start-backend.ps1
-```
-
-Проверить:
+Нужен Docker Desktop.
 
 ```powershell
+cd unturned-lenta-tech
+docker compose up -d --build
 curl http://localhost:8000/health
 curl http://localhost:8000/health/ml
 ```
 
-### 5. Запустить frontend в backend mode
-
-В отдельном терминале из корня repo:
+Остановить:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts/start-frontend-backend.ps1
+docker compose down
 ```
 
-Открыть:
+## API
 
-```text
-http://localhost:3000
-```
-
-### 6. Demo flow
-
-1. Нажать `Выбрать видео`.
-2. Выбрать `mp4`, `mov`, `avi` или `mkv`.
-3. Нажать `Запустить распознавание`.
-4. Дождаться завершения обработки.
-5. Проверить таблицу `Распознанные ценники`.
-6. Нажать `Скачать CSV`.
+- `GET /health`
+- `GET /health/ml`
+- `POST /jobs/upload`
+- `GET /jobs/{job_id}`
+- `GET /jobs/{job_id}/result`
+- `GET /jobs/{job_id}/result.csv`
 
 ## CSV contract
 
-Итоговый CSV содержит 29 колонок строго в таком порядке:
+CSV содержит 29 колонок строго в таком порядке:
 
 ```text
 filename
@@ -201,84 +136,41 @@ action_code_qr
 
 Правила:
 
-- если параметра нет на ценнике — `нет`;
-- если параметр есть, но не распознан — пустое значение.
+- если поля нет на ценнике — `нет`;
+- если поле есть, но не распознано — пустое значение.
 
-## API endpoints
+## Runtime artifacts
 
-- `GET /health`
-- `GET /health/ml`
-- `POST /jobs/upload`
-- `GET /jobs/{job_id}`
-- `GET /jobs/{job_id}/result`
-- `GET /jobs/{job_id}/result.csv`
-
-## Режимы frontend
-
-Mock mode:
-
-- работает без backend;
-- показывает тестовые данные;
-- нужен для быстрого UI-demo.
-
-Backend mode:
-
-- отправляет видео в backend;
-- poll-ит job;
-- получает backend CSV;
-- скачивает backend CSV.
-
-## Что не хранится в репозитории
-
-- видео;
-- runtime-data;
-- generated frames/crops;
-- result.csv/result.json;
-- logs;
-- Docker cache;
-- node_modules;
-- build.
-
-## Model weights / artifacts
-
-В репозиторий включены только runtime weights, нужные для локального Docker demo:
+В репозитории есть только runtime weights, необходимые для demo:
 
 - `backend/lenta-hackathon-main/weights/price_tag_merged_internal_best.pt`
 - `backend/lenta-hackathon-main/weights/FSRCNN_x4.pb`
+- такие же веса включены в `hf-space-backend/`.
 
-Не включены альтернативные/исследовательские веса и generated artifacts. Если `/health/ml` сообщает, что веса отсутствуют, проверьте наличие этих двух файлов.
+В репозиторий не добавляются:
+
+- видео;
+- `runtime-data/`;
+- generated frames/crops;
+- `result.csv` / `result.json`;
+- logs;
+- `node_modules/`;
+- `build/`.
+
+## Проверенный статус
+
+- Local backend e2e: passed.
+- Hosted HF backend API e2e: passed.
+- Vercel frontend собран в backend mode.
+- CSV header: 29 columns, exact order.
+- Mock mode сохранен.
 
 ## Ограничения
 
-- Smoke e2e проверен на коротком фрагменте.
 - Качество модели на длинных видео требует отдельной оценки.
-- Docker build может быть тяжелым из-за ML/OCR зависимостей.
-- Backend deployment требует Docker runtime.
+- Обработка на CPU может идти долго.
+- Frontend больше не обрывает polling по таймауту и ждет terminal job status: `completed` или `failed`.
 
-## Хостинг
+## Команда
 
-Production demo:
-
-- Frontend: https://frontend-weld-ten-13.vercel.app
-- Backend API: https://n3onn-unturned-lenta-tech-backend.hf.space
-- Health: https://n3onn-unturned-lenta-tech-backend.hf.space/health
-- ML health: https://n3onn-unturned-lenta-tech-backend.hf.space/health/ml
-
-Текущий hosted status:
-
-- backend mode demo работает через Hugging Face Spaces Docker;
-- hosted API smoke e2e прошел: upload -> polling -> result JSON -> result CSV;
-- `result.csv` содержит 29 колонок в требуемом порядке;
-- Render backend остановлен: free instance не проходил YOLO detect из-за resource limit.
-
-Frontend-only fallback:
-
-- mock mode сохранен для UI-demo без backend;
-- для backend-connected demo используйте Vercel frontend выше.
-
-## Репозиторий и команда
-
-Команда: Unturned.
-
-Проект подготовлен для Lenta Tech Life Hack.
-
+Unturned — проект для Lenta Tech Life Hack.
