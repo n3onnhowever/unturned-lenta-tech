@@ -9,7 +9,7 @@ Unturned — web-интерфейс и backend pipeline для распозна�
 - Health: https://n3onn-unturned-lenta-tech-backend.hf.space/health
 - ML health: https://n3onn-unturned-lenta-tech-backend.hf.space/health/ml
 
-Hosted backend работает на Hugging Face Spaces Docker. Render backend остановлен, потому что free instance падал на YOLO detect из-за resource limit.
+Hosted backend работает на Hugging Face Spaces Docker.
 
 ## Что умеет
 
