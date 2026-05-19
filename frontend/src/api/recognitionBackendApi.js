@@ -2,7 +2,6 @@ import recognitionColumns from "constants/recognitionColumns";
 import { parseCsv, validateRecognitionCsvHeaders } from "utils/csvParser";
 
 const POLL_INTERVAL_MS = 4000;
-const BACKEND_TIMEOUT_MS = 30 * 60 * 1000;
 
 const notEmpty = (value) => {
   const normalized = String(value ?? "").trim().toLowerCase();
@@ -247,7 +246,9 @@ export async function processVideoWithBackend(file, onProgress) {
 
   onProgress?.(15, { jobId, stageLabel: "Video intake" });
 
-  while (Date.now() - startedAt < BACKEND_TIMEOUT_MS) {
+  // Keep polling until the backend returns a terminal state. Some real videos
+  // can take much longer than the original demo timeout on CPU-only machines.
+  while (true) {
     const job = await getRecognitionJob(jobId);
     const { progress, label } = stageToProgress(job);
     onProgress?.(progress, { jobId, stageLabel: label, rawJob: job });
@@ -280,5 +281,4 @@ export async function processVideoWithBackend(file, onProgress) {
     await wait(POLL_INTERVAL_MS);
   }
 
-  throw new Error("Backend recognition timed out after 30 minutes.");
 }
