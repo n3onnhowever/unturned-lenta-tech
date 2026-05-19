@@ -1,10 +1,35 @@
-<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="64" height="64" rx="16" fill="#061A3D"/>
-  <rect x="12" y="12" width="40" height="40" rx="12" fill="#092B63"/>
-  <path d="M18 32H46" stroke="#5DBCFF" stroke-width="4" stroke-linecap="round"/>
-  <path d="M32 18V46" stroke="#0075FF" stroke-width="4" stroke-linecap="round"/>
-  <circle cx="32" cy="32" r="9" fill="#061A3D" stroke="#8FD8FF" stroke-width="3"/>
-  <circle cx="32" cy="32" r="3" fill="#5DBCFF"/>
-  <path d="M18 22C22 18 26.5 16 32 16C37.5 16 42 18 46 22" stroke="#1EA7FF" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M18 42C22 46 26.5 48 32 48C37.5 48 42 46 46 42" stroke="#1EA7FF" stroke-width="2.5" stroke-linecap="round"/>
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="28" y1="18" x2="228" y2="238" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#061D46"/>
+      <stop offset="0.56" stop-color="#082B66"/>
+      <stop offset="1" stop-color="#020917"/>
+    </linearGradient>
+    <linearGradient id="scan" x1="48" y1="78" x2="208" y2="178" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7FDBFF"/>
+      <stop offset="1" stop-color="#008CFF"/>
+    </linearGradient>
+    <filter id="glow" x="-40" y="-40" width="336" height="336" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.02 0 0 0 0 0.55 0 0 0 0 1 0 0 0 0.55 0"/>
+      <feBlend in="SourceGraphic" mode="screen"/>
+    </filter>
+  </defs>
+  <rect width="256" height="256" rx="56" fill="url(#bg)"/>
+  <circle cx="198" cy="58" r="58" fill="#0A66FF" opacity="0.22"/>
+  <circle cx="55" cy="208" r="72" fill="#16C9FF" opacity="0.13"/>
+  <path d="M70 86V68C70 57 79 48 90 48H108" stroke="#75D7FF" stroke-width="12" stroke-linecap="round"/>
+  <path d="M186 86V68C186 57 177 48 166 48H148" stroke="#168CFF" stroke-width="12" stroke-linecap="round"/>
+  <path d="M70 170V188C70 199 79 208 90 208H108" stroke="#168CFF" stroke-width="12" stroke-linecap="round"/>
+  <path d="M186 170V188C186 199 177 208 166 208H148" stroke="#75D7FF" stroke-width="12" stroke-linecap="round"/>
+  <g filter="url(#glow)">
+    <path d="M50 128H206" stroke="url(#scan)" stroke-width="12" stroke-linecap="round"/>
+  </g>
+  <rect x="88" y="88" width="80" height="80" rx="20" fill="#061A3D" fill-opacity="0.86" stroke="#2CAEFF" stroke-width="7"/>
+  <circle cx="110" cy="110" r="8" fill="#86E6FF"/>
+  <circle cx="146" cy="110" r="8" fill="#1496FF"/>
+  <circle cx="110" cy="146" r="8" fill="#1496FF"/>
+  <circle cx="146" cy="146" r="8" fill="#86E6FF"/>
+  <path d="M82 62C96 55 111 51 128 51C145 51 160 55 174 62" stroke="#3FCBFF" stroke-width="6" stroke-linecap="round" opacity="0.88"/>
+  <path d="M82 194C96 201 111 205 128 205C145 205 160 201 174 194" stroke="#3FCBFF" stroke-width="6" stroke-linecap="round" opacity="0.88"/>
 </svg>
